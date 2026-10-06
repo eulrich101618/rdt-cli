@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import json
 import random
 import time
 from typing import Any
@@ -130,7 +131,13 @@ class BaseTransport:
                     raise RedditApiError("Received HTML instead of JSON (possible auth redirect)")
                 if not text.strip():
                     return {}
-                return resp.json()
+                result = resp.json()
+                if isinstance(result, str):
+                    try:
+                        result = json.loads(result)
+                    except json.JSONDecodeError:
+                        return {}
+                return result
             except (httpx.TimeoutException, httpx.NetworkError) as exc:
                 last_exc = exc
                 wait = (2**attempt) + random.uniform(0, 1)

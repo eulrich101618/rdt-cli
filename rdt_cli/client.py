@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import json
 from typing import Any
 
 from .config import DEFAULT_CONFIG, RuntimeConfig
@@ -364,6 +365,14 @@ class RedditClient:
             if after:
                 params["after"] = after
             data = self._get(SUBSCRIPTIONS_URL, params=params)
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except json.JSONDecodeError:
+                    from .exceptions import ForbiddenError
+                    raise ForbiddenError("subs-only braucht OAuth/subs-Scope, Cookie reicht nicht")
+            if not isinstance(data, dict):
+                return names
             children = data.get("data", {}).get("children", [])
             if not children:
                 break
